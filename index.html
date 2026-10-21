@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PixRevive – Photo Enhancer & Object Eraser</title>
+  <meta name="description" content="Sharpen and enlarge photos 2× or 4×, bring back faded colours and erase unwanted objects with AI that runs on your own PC. No upload, no subscription.">
+  <meta name="theme-color" content="#c2410c">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><img src="icon-192.png" alt="" width="30" height="30"><span>PixRevive</span></div>
+    <span id="fileName" class="file-name"></span>
+    <div class="top-btns">
+      <button id="openBtn" class="tb">📂 Open photo</button>
+      <button id="saveBtn" class="tb" disabled>💾 Save</button>
+      <button id="moreBtn" class="tb">☰ More</button>
+      <button id="proBtn" class="pro-btn" hidden>★ Get Pro</button>
+    </div>
+    <div id="menu" class="menu" hidden>
+      <button id="saveJpgBtn">Save as JPG (smaller file)</button>
+      <button id="resetBtn">Go back to the original photo</button>
+      <a href="help.html" target="_blank" rel="noopener">❓ How to use PixRevive</a>
+      <a href="mailto:thequan03072002@gmail.com?subject=PixRevive%20feedback">✉ Feedback &amp; support</a>
+      <a href="https://apps.microsoft.com/detail/9NNMBXF2VJG5" target="_blank" rel="noopener">More apps: TruePass passport photos</a>
+      <a href="https://apps.microsoft.com/detail/9P25KDSFDB0N" target="_blank" rel="noopener">More apps: PixelBatch image converter</a>
+    </div>
+    <input id="fileIn" type="file" accept="image/*" hidden>
+  </header>
+
+  <main class="layout">
+    <aside class="left">
+      <section class="tool">
+        <h2>✨ Sharpen &amp; enlarge</h2>
+        <p class="hint">AI adds real detail – great for old, small or blurry photos.</p>
+        <div class="seg" id="scaleSeg"><button data-v="2" class="on">2× bigger</button><button data-v="4">4× bigger <span class="badge pro-only">PRO</span></button></div>
+        <button id="upBtn" class="primary wide" disabled>✨ Enhance photo</button>
+        <p id="upInfo" class="hint"></p>
+      </section>
+
+      <section class="tool">
+        <h2>🧽 Erase objects</h2>
+        <p class="hint">Paint over people, wires, scratches, dates or logos – they disappear and the background is filled in.</p>
+        <label class="field">Brush size <span id="brushVal" class="muted"></span><input id="brush" type="range" min="6" max="120" value="36"></label>
+        <div class="two">
+          <button id="eraseBtn" class="primary" disabled>🧽 Erase</button>
+          <button id="clearMaskBtn" class="ghost" disabled>Clear paint</button>
+        </div>
+      </section>
+
+      <section class="tool">
+        <h2>🎨 Bring back colour</h2>
+        <p class="hint">Fixes faded, yellow or dull photos in one click.</p>
+        <div class="two">
+          <button id="autoBtn" class="ghost" disabled>🎨 Auto colour</button>
+          <button id="bwBtn" class="ghost" disabled>⚫ Black &amp; white</button>
+        </div>
+        <label class="field">Warmth <span id="warmVal" class="muted"></span><input id="warm" type="range" min="-40" max="40" value="0" disabled></label>
+      </section>
+
+      <div class="history">
+        <button id="undoBtn" class="ghost" disabled>↶ Undo</button>
+        <button id="redoBtn" class="ghost" disabled>↷ Redo</button>
+      </div>
+      <p class="promise">🔒 Runs on your PC – your photos are never uploaded.<br>💳 Pay once for Pro – no subscription.</p>
+    </aside>
+
+    <section class="stage">
+      <div class="stagebar">
+        <label class="check small"><input id="compare" type="checkbox"> Compare with the original</label>
+        <span id="sizeLine" class="muted"></span>
+        <span class="zoom"><button id="zoomOut" title="Zoom out">−</button><button id="zoomFit" title="Fit">Fit</button><button id="zoom100" title="Actual size">1:1</button><button id="zoomIn" title="Zoom in">+</button></span>
+      </div>
+      <div id="view" class="view">
+        <div id="empty" class="empty">
+          <h1>Make old and blurry photos look new</h1>
+          <p>Open a photo – or drop it here.</p>
+          <button id="openBig" class="primary big">📂 Open a photo</button>
+          <ul class="promise-list">
+            <li>✨ Sharpen and enlarge 2× or 4× with AI</li>
+            <li>🧽 Erase people, objects and scratches</li>
+            <li>🎨 Bring back faded colours</li>
+            <li>🔒 Your photos never leave this PC</li>
+          </ul>
+        </div>
+        <div id="canvasWrap" class="canvas-wrap" hidden>
+          <canvas id="cv"></canvas>
+          <canvas id="mask"></canvas>
+          <div id="split" class="split" hidden><span>Original</span><span>Now</span></div>
+        </div>
+        <div id="busy" class="busy" hidden><div class="busy-card"><b id="busyTitle">Working…</b><div class="bar"><i id="busyBar"></i></div><p id="busyText" class="hint"></p></div></div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="proDialog" class="dlg">
+    <h2>PixRevive Pro</h2>
+    <p class="muted">One-time purchase. Yours forever on this Microsoft account. No subscription, ever.</p>
+    <ul class="pro-list">
+      <li><strong>4× enlarging</strong> – turn a small photo into a sharp print</li>
+      <li><strong>Any photo size</strong> – the free version enlarges photos up to 1 megapixel</li>
+      <li><strong>Save at full quality</strong> after erasing and colour fixes on big photos</li>
+    </ul>
+    <p id="proMsg" class="pro-msg" hidden></p>
+    <div class="row-btns">
+      <button id="buyBtn" class="primary">Unlock Pro</button>
+      <button id="restoreBtn" class="ghost">Restore purchase</button>
+      <button id="closePro" class="ghost">Not now</button>
+    </div>
+  </dialog>
+  <div id="toast" class="toast" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>
