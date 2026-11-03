@@ -66,7 +66,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .pro-msg { background: var(--accent-2); padding: 8px 10px; border-radius: 8px; }
 .row-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #1f1a17; color: #fff; padding: 10px 16px; border-radius: 10px; z-index: 50; max-width: 90vw; }
-@media (max-width: 900px) { .layout { grid-template-columns: 1fr; grid-template-rows: auto 60vh; } }
+@media (max-width: 900px) { html, body { height: auto; } .layout { flex: none; grid-template-columns: 1fr; grid-template-rows: auto 70vh; } .left { overflow: visible; border-right: 0; border-bottom: 1px solid var(--line); } } /* narrow window: the page scrolls, so every tool is reachable (was squeezed into a tiny scroll box) */
 @media (max-width: 640px) { .topbar { flex-wrap: wrap; gap: 8px; padding: 8px 10px; } .top-btns { flex-wrap: wrap; margin-left: auto; } .tb { font-size: 14px; padding: 7px 10px; } .stagebar { flex-wrap: wrap; } }
 .fb-note { color: var(--muted); font-size: 12px; font-weight: 400; line-height: 1.45; margin: 10px 0 0; overflow-wrap: anywhere; }
 .fb-note a { color: inherit; text-decoration: underline; }
