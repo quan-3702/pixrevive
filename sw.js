@@ -1,4 +1,4 @@
-const CACHE = 'pixrevive-v7';
+const CACHE = 'pixrevive-v8';
 const ASSETS = ['./', 'index.html', 'help.html', 'privacy.html', 'style.css', 'app.js', 'worker.js', 'manifest.json', 'icon-192.png', 'icon-512.png', 'icon-512-maskable.png'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
