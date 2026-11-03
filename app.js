@@ -4,7 +4,7 @@ const PRO_SKU = 'pixrevive_pro';
 const PRO_IDS = [PRO_SKU];
 let STORE_URL = 'https://apps.microsoft.com/detail/9P8Q19XG2XGT';
 let proAvailable = false; // Pro limits apply only when the Store actually sells the add-on
-try { if ('getDigitalGoodsService' in window && localStorage.getItem('pixrevive-proavail') === '1') proAvailable = true; } catch (_) {} // keep Pro limits when offline
+proAvailable = true; // owner's rule: Pro is never free – free limits apply everywhere (website, Store, offline) until Pro is bought
 let proSku = PRO_SKU;
 let isPro = false;
 try { isPro = localStorage.getItem('pixrevive-pro') === '1'; } catch (_) {}
@@ -39,7 +39,6 @@ async function checkPro() {
   if (!svc) return false;
   try {
     const details = await svc.getDetails(PRO_IDS).catch(() => []);
-    if (details.length) { proAvailable = true; try { localStorage.setItem('pixrevive-proavail', '1'); } catch (_) {} }
     if (details[0]) { proSku = details[0].itemId; if (!PRO_IDS.includes(proSku)) PRO_IDS.push(proSku); }
     const list = await svc.listPurchases();
     const owned = list.some((p) => PRO_IDS.includes(p.itemId));
@@ -57,6 +56,7 @@ async function openPro(reason) {
     $('restoreBtn').hidden = false;
     try {
       const [d] = await svc.getDetails([proSku]);
+      if (!d) proMessage((reason ? reason + ' ' : '') + 'Pro is being added to the Microsoft Store and will be on sale very soon – please check again in a day or two.');
       const price = d && d.price ? new Intl.NumberFormat(undefined, { style: 'currency', currency: d.price.currency }).format(Number(d.price.value)) : '';
       $('buyBtn').textContent = price ? `Unlock Pro – ${price}` : 'Unlock Pro';
     } catch (_) { $('buyBtn').textContent = 'Unlock Pro'; }
@@ -163,7 +163,15 @@ async function openFile(f) {
 function download(blob, fname) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 60000); toast(`Saved ${fname} to your Downloads folder`); }
 function save(jpg) {
   if (!current) return;
-  current.toBlob((b) => download(b, `${name}-revived.${jpg ? 'jpg' : 'png'}`), jpg ? 'image/jpeg' : 'image/png', 0.93);
+  let out = current, note = '';
+  // Pro promise: "Save at full quality after erasing and colour fixes on big photos" – free saves big photos at FREE_MP
+  if (!unlocked() && original && mp(original) > FREE_MP && mp(current) > FREE_MP) {
+    const k = Math.sqrt(FREE_MP / mp(current)); out = canvasOf(Math.max(1, Math.floor(current.width * k)), Math.max(1, Math.floor(current.height * k)));
+    const x = out.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(current, 0, 0, out.width, out.height);
+    note = ` at ${out.width} × ${out.height} px – the free version saves big photos at ${FREE_MP} megapixel, Pro saves them at full quality.`;
+  }
+  const fname = `${name}-revived.${jpg ? 'jpg' : 'png'}`;
+  out.toBlob((b) => { download(b, fname); if (note) toast(`Saved ${fname}${note}`, 7000); }, jpg ? 'image/jpeg' : 'image/png', 0.93);
 }
 
 // ---------- AI worker ----------
