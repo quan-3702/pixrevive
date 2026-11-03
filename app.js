@@ -4,6 +4,7 @@ const PRO_SKU = 'pixrevive_pro';
 const PRO_IDS = [PRO_SKU];
 let STORE_URL = 'https://apps.microsoft.com/detail/9P8Q19XG2XGT';
 let proAvailable = false; // Pro limits apply only when the Store actually sells the add-on
+try { if ('getDigitalGoodsService' in window && localStorage.getItem('pixrevive-proavail') === '1') proAvailable = true; } catch (_) {} // keep Pro limits when offline
 let proSku = PRO_SKU;
 let isPro = false;
 try { isPro = localStorage.getItem('pixrevive-pro') === '1'; } catch (_) {}
@@ -25,17 +26,26 @@ function setPro(v) {
   document.body.classList.toggle('unlocked', unlocked());
   renderUi();
 }
+async function checkProAfterBuy() {
+  for (let i = 0; i < 6; i++) {
+    if (await checkPro()) return true;
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+  proMessage('Thank you! If Pro is not unlocked within a minute, click “Restore purchase”.');
+  return false;
+}
 async function checkPro() {
   const svc = await billing();
   if (!svc) return false;
   try {
     const details = await svc.getDetails(PRO_IDS).catch(() => []);
-    proAvailable = details.length > 0;
+    if (details.length) { proAvailable = true; try { localStorage.setItem('pixrevive-proavail', '1'); } catch (_) {} }
     if (details[0]) { proSku = details[0].itemId; if (!PRO_IDS.includes(proSku)) PRO_IDS.push(proSku); }
     const list = await svc.listPurchases();
     const owned = list.some((p) => PRO_IDS.includes(p.itemId));
-    setPro(owned);
-    return owned;
+    if (owned || details.length) { setPro(owned); return owned; }
+    setPro(isPro); // Store did not answer (offline): keep what we knew
+    return isPro;
   } catch (_) { return isPro; }
 }
 function proMessage(text) { const m = $('proMsg'); m.hidden = !text; m.textContent = text || ''; }
@@ -67,7 +77,7 @@ async function buyPro() {
     proMessage('Purchase could not be completed: ' + (e.message || e));
     return;
   }
-  if (await checkPro()) { proMessage('Thank you! Pro is unlocked. ★'); setTimeout(() => $('proDialog').close(), 1500); }
+  if (await checkProAfterBuy()) { proMessage('Thank you! Pro is unlocked. ★'); setTimeout(() => $('proDialog').close(), 1500); }
 }
 function needsPro(reason) { if (unlocked()) return false; openPro(reason); return true; }
 
@@ -182,6 +192,7 @@ function progressFor(what) {
     else $('busyText').textContent = `${what}… ${Math.round(m.pct)}%`;
   };
 }
+const aiError = (e) => (/fetch|network|download|import/i.test(e.message) ? 'the AI is downloaded the first time you use it – connect to the internet once and try again.' : e.message);
 const imageData = (c) => c.getContext('2d').getImageData(0, 0, c.width, c.height);
 function fromData(r) { const c = canvasOf(r.width, r.height); c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(r.data), r.width, r.height), 0, 0); return c; }
 
@@ -198,7 +209,7 @@ async function enhance() {
     if (scale === 2) { const c = canvasOf(current.width * 2, current.height * 2), x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(out, 0, 0, c.width, c.height); out = c; }
     fit = true;
     commit(out, `Done – the photo is now ${out.width} × ${out.height} px. Turn on “Compare” to see the difference.`);
-  } catch (e) { toast('The photo could not be enhanced: ' + e.message, 7000); }
+  } catch (e) { toast('The photo could not be enhanced: ' + aiError(e), 7000); }
   hideBusy();
 }
 
@@ -236,7 +247,7 @@ async function eraseNow() {
     const out = fromData(r.image);
     clearMask();
     commit(out, 'Erased. Paint again to remove more, or press Undo.');
-  } catch (e) { toast('Erasing did not work: ' + e.message, 7000); }
+  } catch (e) { toast('Erasing did not work: ' + aiError(e), 7000); }
   hideBusy();
 }
 
